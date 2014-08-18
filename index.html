@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>获取豆瓣图书笔记</title>
+    <style>
+    #book-id{
+        width:300px;
+    }
+    </style>
+</head>
+<body>
+
+<input type="text" value="" id="book-id" placeholder="请输入图书id">
+<input type="button" id="get-notes" value="获取笔记"> 
+
+<div id="notes">
+    
+
+</div>
+
+
+
+    <script type="text/javascript" src="jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="jquery.tmpl.min.js"></script>
+    <script>
+    $(function () {
+
+        function getNotes (url,startIndex) {
+            $.ajax({
+                    type:"get",
+                    url:url,
+                    dataType:"jsonp",
+                    data:{
+                        count:100,
+                        start:startIndex
+                    }
+
+                }).done(function (data) {
+                    console.log(data);
+                    if(data.annotations && $.isArray(data.annotations)){
+                        var markup = [
+                              "<h4>${chapter}</h4>",
+                              "<pre>${content}</pre>"
+                              ].join('');
+
+                        $.template( "noteTMPL", markup );
+
+
+                        $("#notes").append($.tmpl( "noteTMPL", data.annotations,{
+                         
+                        }));
+
+                        if(data.start + data.count < data.total){
+                            setTimeout(function () {
+                                getNotes(url,data.start + data.count);
+                            },1000);
+                         }
+                    }
+                }).fail(function (error) {
+                    alert("errors")
+                });
+        }
+
+        $("#get-notes").click(function () {
+            var id = $("#book-id").val();
+            if(id){
+                // https://api.douban.com/v2/book/3813194/annotations?count=100
+                var url = "https://api.douban.com/v2/book/"+id+"/annotations";
+                $("#notes").empty();
+                getNotes(url,0);
+            }
+        });
+    });
+    </script>
+</body>
+</html>
