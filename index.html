@@ -22,9 +22,17 @@
 
 
     <script type="text/javascript" src="jquery-1.11.1.js"></script>
-    <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script>
     $(function () {
+
+        function isJson(str) {
+            try {
+                JSON.parse(str);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
 
         function getNotes (url,startIndex) {
             $.ajax({
@@ -39,17 +47,33 @@
                 }).done(function (data) {
                     console.log(data);
                     if(data.annotations && $.isArray(data.annotations)){
-                        var markup = [
-                              "<h4>${chapter}</h4>",
-                              "<pre>${content}</pre>"
-                              ].join('');
+                        var annotations = data.annotations;
+                       
 
-                        $.template( "noteTMPL", markup );
+                        var tmpl = "";
+                        annotations.forEach(function (v,k) {
+                            if(v.chapter){
+                                tmpl +="<h4>" + v.chapter +"</h4>";
+                            }
+                            if(v.content){
+                                if(isJson(v.content)){
+                                    var content = JSON.parse(v.content);
+                                    var blocks = content.blocks;
+                                    blocks.forEach(function (b, k) {
+                                        if (b.text) {
+                                            tmpl += "<p>" + b.text + "</p>";
+                                        }
+                                    })
+                                }else{
+                                     tmpl += "<p>" + v.content + "</p>";
+                                }
+                                
+                            }
+                        });
 
+                        console.log(tmpl);
 
-                        $("#notes").append($.tmpl( "noteTMPL", data.annotations,{
-                         
-                        }));
+                        $("#notes").append(tmpl);
 
                         if(data.start + data.count < data.total){
                             setTimeout(function () {
